@@ -1,0 +1,19 @@
+System lokalizacji pojazdu
+Vehicle location system
+
+System lokalizowania pojazdu konfigurowany przez WiFi udostępniający położenie pojazdu cyklicznie lub poprzez wywołanie.
+
+1.Wybór mikroprocesora
+2.Wybór modułu GSM i GPS
+3.Wybór sposobu wysyłania danych
+4.Wybór sposobu przechowywania danych
+5.Wybór sposobu prezentacji danych
+6.Zapoznanie się z komendami AT
+7.Stworzenie oprogramowania
+8.Wybór sposobu zasilania urządzenia
+9.Zbadanie skuteczności działania
+10.Projekt obudowy do druku 3d
+11.Testy zużycia energii
+12.Optymalizacja oprogramowania
+13.Określenie maksymalnego czasu pracy na zasilaniu bateryjnym
+14.Opracowanie pisemnej części pracy inżynierskiej i wykonanie instrukcji obsługi urządzenia

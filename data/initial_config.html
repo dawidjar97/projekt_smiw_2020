@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="static/styles.css">
+        <title>Konfiguracja</title>
+    </head>
+    <body>
+        <div class="main-box">
+            <h1>Konfiguracja</h1>
+            <p>Potrzebujemy kilku informacji wymaganych do konfiguracji Lokalizatora GPS</p>
+            <form id="form" action="initial_config_ready.html" method="post">
+                <div class="form-row">
+                    <div class="form-element">
+                        <label for="nr-tel">Numer telefonu</label>
+                        <input id="nr-tel" type="text" name="nr-tel" value="" placeholder="+48515303896" minlength="9" maxlength="12" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-element">
+                        <label for="write-API-Key">MQTT WriteAPIKey</label>
+                        <input id="write-API-Key" type="text" name="write-API-Key" value="" placeholder="HRDDRV3GPRPSUPBB" minlength="9" maxlength="16" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-element">
+                        <label for="channel-ID">MQTT channelID</label>
+                        <input id="channel-ID" type="text" name="channel-ID" value="" placeholder="1048994" minlength="7" maxlength="8" required>
+                    </div>
+                </div>
+            </form>
+            <div class="btn">
+                <a href="#" onclick="trySubmit();"><img src="static/next.svg"></a>
+                <p id="message">Zapisz</p>
+            </div>
+        </div>
+    </body>
+    <script>
+        const formEl = document.getElementById('form');
+        const nrTel = document.getElementById('nr-tel');
+        const writeAPIKey = document.getElementById('write-API-Key');
+        const channelID = document.getElementById('channel-ID');
+        const message = document.getElementById('message');
+        
+        function trySubmit() {
+            if(!(nrTel.value.length >= 9 && nrTel.value.length <= 12)) {
+                console.log('nrTel validation');
+                message.textContent = 'Proszę podać prawidłowy numer telefonu';
+                return;
+            }
+
+            if(!(writeAPIKey.value.length >= 9 && writeAPIKey.value.length <= 12)) {
+                console.log('writeAPIKey validation');
+                message.textContent = 'Proszę podać prawidłowy writeAPIKey';
+                return;
+            }
+
+            if(!(channelID.value.length >= 3 && channelID.value.length <= 8)) {
+                console.log('channelID validation');
+                message.textContent = 'Proszę podać prawidłowy channelID';
+                return;
+            }
+
+            formEl.submit();
+        }
+    </script>
+</html>
