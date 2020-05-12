@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define INTERNAL_LED 2
-#define RESET_BUTTON_PIN 5
+#define RESET_BUTTON_PIN 0
 #define SERIAL_BAUD 115200
 #define A9_BAUD_RATE 115200
 #define HTTP_SERVER_PORT 80
@@ -48,7 +48,7 @@ void setup()
   #endif
 
   pinMode(RESET_BUTTON_PIN, INPUT);
-  buttonState = digitalRead(RESET_BUTTON_PIN);
+  buttonState = 0;//digitalRead(RESET_BUTTON_PIN);
 
   #if DEBUG
     Serial.print("Stan przycisku: "); Serial.println(buttonState);
@@ -88,6 +88,8 @@ void setup()
     }
 
     //config loaded
+
+    WiFi.mode(WIFI_OFF);
 
     topic ="channels/" + String( channelID ) + "/publish/"+String(writeAPIKey);
 
@@ -134,7 +136,8 @@ void setup()
 
     server.on("/initial_config_ready.html", HTTP_POST, [](AsyncWebServerRequest *request) 
     {
-      if(request->hasParam("nr-tel", true) && request->hasParam("write-API-Key", true) && request->hasParam("channel-ID", true)) {
+      if(request->hasParam("nr-tel", true) && request->hasParam("write-API-Key", true) && request->hasParam("channel-ID", true)) 
+      {
         AsyncWebParameter* tel = request->getParam("nr-tel", true);
         AsyncWebParameter* apiKey = request->getParam("write-API-Key", true);
         AsyncWebParameter* chID = request->getParam("channel-ID", true);
@@ -145,13 +148,15 @@ void setup()
           Serial.print("channel-ID: "); Serial.println(chID->value().c_str());
         #endif
 
-        request->send(SPIFFS, "/initial_config_ready.html", String(), false, [&tel](const String& var) {
+        request->send(SPIFFS, "/initial_config_ready.html", String(), false, [&tel](const String& var) 
+        {
           if(var == "NAZWA_SIECI") 
             return tel->value();
           return String();
         });
 
-        if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), lastLocation)) {
+        if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), lastLocation)) 
+        {
           #if DEBUG
             Serial.println("Something went horribly wrong.");
             pinMode(INTERNAL_LED, OUTPUT);
@@ -162,20 +167,24 @@ void setup()
         espReboot = true;
       }
     });
+    IPAddress IP = WiFi.softAPIP();
+    #if DEBUG
+      Serial.print("AP IP address: "); Serial.println(IP);
+    #endif
+
+    server.serveStatic("/static/", SPIFFS, "/static/");
+    server.begin();
   }
-
-  IPAddress IP = WiFi.softAPIP();
-  #if DEBUG
-    Serial.print("AP IP address: "); Serial.println(IP);
-  #endif
-
-  server.serveStatic("/static/", SPIFFS, "/static/");
-  server.begin();
 }
 
 void loop()
 { 
-
+  if(espReboot) {
+    delay(5000);
+    server.end();
+    WiFi.softAPdisconnect();
+    ESP.restart();
+  }
 
   GPS_position=sendData("AT+LOCATION=2",1000,DEBUG);
   if( GPS_position.indexOf("OK") >= 0 )
@@ -208,12 +217,6 @@ void loop()
   }
   delay(10000);
 
-  if(espReboot) {
-    delay(5000);
-    server.end();
-    WiFi.softAPdisconnect();
-    ESP.restart();
-  }
 }
 String sendData(String command, const int timeout, boolean debug)
 {
