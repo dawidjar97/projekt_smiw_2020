@@ -93,7 +93,8 @@ void setup()
 
     topic ="channels/" + String( channelID ) + "/publish/"+String(writeAPIKey);
 
-    swSer.begin(A9_BAUD_RATE);
+    swSer.begin(A9_BAUD_RATE, SWSERIAL_8N1, 14, 12, false, 128);
+
     pinMode(A9G_PON, OUTPUT);//LOW LEVEL ACTIVE
     pinMode(A9G_POFF, OUTPUT);//HIGH LEVEL ACTIVE
     pinMode(A9G_LOWP, OUTPUT);//LOW LEVEL ACTIVE
@@ -199,6 +200,15 @@ void loop()
       }
     }
     String payload = String("field1=" + String(GPS_position.substring(separator-9,separator)) + "&field2=" + String(GPS_position.substring(separator+1,separator+10)));
+    lastLocation=String(GPS_position.substring(separator-9,separator))+String(GPS_position.substring(separator+1,separator+10));
+    if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
+    {
+      #if DEBUG
+        Serial.println("Something went horribly wrong.");
+        pinMode(INTERNAL_LED, OUTPUT);
+        digitalWrite(INTERNAL_LED, HIGH);
+      #endif
+    }
     Serial.println(payload);
     String command="AT+MQTTPUB=\""+ topic + "\""+ ","+"\""+ payload + "&status=MQTTPUBLISH" + "\""+",0,0,0";
     //Serial.println(command);

@@ -25,7 +25,7 @@ bool isConfigurationCompleted(fs::FS &fs)
     return fs.exists(CONFIG_PATH);
 }
 
-bool saveConfiguration(fs::FS &fs, const String & nrTel, const String & writeAPIKey, const String & channelID, const String & location)
+bool saveConfiguration(fs::FS &fs, const String & nrTel, const String & writeAPIKey, const String & channelID, const String & lastLocation)
 {
     if(fs.exists(CONFIG_PATH)) {
         #if DEBUG
@@ -46,12 +46,12 @@ bool saveConfiguration(fs::FS &fs, const String & nrTel, const String & writeAPI
     file.print(nrTel); file.print('\n');
     file.print(writeAPIKey); file.print('\n');
     file.print(channelID); file.print('\n');
-    file.print(location); file.print('\n');
+    file.print(lastLocation); file.print('\n');
     file.close();
     return true;
 }
 
-bool loadConfiguration(fs::FS &fs, String & nrTel, String & writeAPIKey, String & channelID, String & location)
+bool loadConfiguration(fs::FS &fs, String & nrTel, String & writeAPIKey, String & channelID, String & lastLocation)
 {
     if(!fs.exists(CONFIG_PATH)) {
         #if DEBUG
@@ -71,13 +71,13 @@ bool loadConfiguration(fs::FS &fs, String & nrTel, String & writeAPIKey, String 
     nrTel = file.readStringUntil('\n');
     writeAPIKey = file.readStringUntil('\n');
     channelID = file.readStringUntil('\n');
-    location = file.readStringUntil('\n');
+    lastLocation = file.readStringUntil('\n');
 
     #if DEBUG
         Serial.print("nrTel: "); Serial.println(nrTel);
         Serial.print("writeAPIKey: "); Serial.println(writeAPIKey);
         Serial.print("channelID: "); Serial.println(channelID);
-        Serial.print("location: "); Serial.println(location);
+        Serial.print("location: "); Serial.println(lastLocation);
     #endif
 
     return true;
