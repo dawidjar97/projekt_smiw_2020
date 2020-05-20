@@ -27,16 +27,18 @@ bool isConfigurationCompleted(fs::FS &fs)
 
 bool saveConfiguration(fs::FS &fs, const String & nrTel, const String & writeAPIKey, const String & channelID, const String & lastLocation)
 {
-    if(fs.exists(CONFIG_PATH)) {
+    /*if(fs.exists(CONFIG_PATH)) 
+    {
         #if DEBUG
             Serial.println("Config file alredy exists");
         #endif
         return false;
-    }
+    }*/
         
     
     File file = fs.open(CONFIG_PATH, "w");
-    if(!file || file.isDirectory()) {
+    if(!file || file.isDirectory()) 
+    {
         #if DEBUG
             Serial.println("Cannot open config file or is directory");
         #endif

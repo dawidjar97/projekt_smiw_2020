@@ -38,7 +38,6 @@ int A9GPOWERON();
 void A9GMQTTCONNECT();
 String sendData(String command, const int timeout, boolean debug);
 
-
 void setup()
 {
   SPIFFS.begin();
@@ -81,7 +80,7 @@ void setup()
       #if DEBUG
         Serial.println("Something went wrong loading config file. Erasing config file");
         delay(500);
-      #endif
+      #endif  
 
       deleteFile(SPIFFS, CONFIG_PATH);
       ESP.restart();
@@ -200,7 +199,7 @@ void loop()
       }
     }
     String payload = String("field1=" + String(GPS_position.substring(separator-9,separator)) + "&field2=" + String(GPS_position.substring(separator+1,separator+10)));
-    lastLocation=String(GPS_position.substring(separator-9,separator))+String(GPS_position.substring(separator+1,separator+10));
+    lastLocation=String(GPS_position.substring(separator-9,separator))+", "+String(GPS_position.substring(separator+1,separator+10));
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -213,7 +212,7 @@ void loop()
     String command="AT+MQTTPUB=\""+ topic + "\""+ ","+"\""+ payload + "&status=MQTTPUBLISH" + "\""+",0,0,0";
     //Serial.println(command);
     //sendData("AT+MQTTPUB=\"channels/1048994/publish/HRDDRV3GPRPSUPBB\",\"field1=128&field2=64&status=MQTTPUBLISH\",0,0,0",1000,DEBUG);
-    sendData(command,1000,DEBUG);
+    sendData(command,5000,DEBUG);
     /*delay(1000);
     if( GPS_position.indexOf("OK") >= 0 )
     {
@@ -283,13 +282,12 @@ void A9GMQTTCONNECT()
   delay(1000);
   sendData("AT+CGACT=1,1",1000,DEBUG);  //start
   delay(1000);
-  sendData("AT+MQTTDISCONN",1000,DEBUG);  //disc
+  sendData("AT+MQTTDISCONN",5000,DEBUG);  //disc
   delay(2000);
-  String msg=sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",1000,DEBUG);
-  delay(4000);
+  String msg=sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
   if( msg.indexOf("OK") >= 0 )
   {
-    Serial.println("A9G CONNECT to the ThingSpeak");
+    Serial.println("A9G CONNECTED to the ThingSpeak");
   }
  delay(2000);
  //sendData("AT+MQTTPUB=\"channels/1048994/publish/HRDDRV3GPRPSUPBB\",\"field1=128&field2=64&status=MQTTPUBLISH\",0,0,0",1000,DEBUG);
