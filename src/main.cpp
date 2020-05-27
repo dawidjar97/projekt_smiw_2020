@@ -50,7 +50,7 @@ void setup()
   buttonState = 0;//digitalRead(RESET_BUTTON_PIN);
 
   #if DEBUG
-    Serial.print("Stan przycisku: "); Serial.println(buttonState);
+    Serial.print("Button state: "); Serial.println(buttonState);
   #endif
 
   if (buttonState) //Usuniecie konfiguracji
@@ -58,7 +58,7 @@ void setup()
     deleteFile(SPIFFS, CONFIG_PATH);
     
     #if DEBUG
-      Serial.println("Konfiguracja usunieta, restart systemu.");
+      Serial.println("Configuration deleted, system restart");
     #endif
     pinMode(INTERNAL_LED, OUTPUT);
     digitalWrite(INTERNAL_LED, HIGH);
@@ -70,7 +70,7 @@ void setup()
   if(isConfigurationCompleted(SPIFFS)) 
   {
     #if DEBUG
-      Serial.println("Konfiguracja zaladowano");
+      Serial.println("Configuration loaded");
     #endif
 
   
@@ -123,7 +123,7 @@ void setup()
   else
   { //config not loaded
     #if DEBUG
-      Serial.println("Nie zaladowano konfiguracji");
+      Serial.println("Configuration not loaded");
     #endif
 
     WiFi.softAP(DEFAULT_SSID, DEFAULT_PASSWORD);
@@ -194,7 +194,6 @@ void loop()
   sendData("AT+LOCATION=2",1000,DEBUG);
   if( a9gAnswer.indexOf("OK") >= 0 )
   {
-    String LG=a9gAnswer.substring(17,43);
     for(uint8_t i=0;i<a9gAnswer.length();i++)
     {
       if(a9gAnswer[i]==',')
@@ -208,7 +207,7 @@ void loop()
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
-        Serial.println("Something went horribly wrong.");
+        Serial.println("Something went wrong.");
         pinMode(INTERNAL_LED, OUTPUT);
         digitalWrite(INTERNAL_LED, HIGH);
       #endif
@@ -224,15 +223,14 @@ void loop()
       #if DEBUG
         Serial.println("MQTT sent");
       #endif
-      delay(50000);
+      delay(500000);
     }
     else
     {
-      sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
+      A9GMQTTCONNECT();
     }
-    delay(500000);
   }
-  delay(10000);
+  delay(60000);
 
 }
 void sendData(String command, const int timeout, boolean debug)
