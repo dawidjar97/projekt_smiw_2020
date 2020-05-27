@@ -6,7 +6,8 @@ html, body {
 }
 
 body {
-    background: radial-gradient(100% 100% at 0% 0%, rgb(158, 162, 196) 3.82%, rgb(86, 192, 134) 100%);
+    /*background: radial-gradient(100% 100% at 0% 0%, rgb(189, 211, 67) 3.82%, rgb(86, 192, 134) 100%);*/
+    background: linear-gradient(70deg, rgb(189, 211, 67), rgb(86, 192, 134));
     display: flex;
     background-size: cover;
 }

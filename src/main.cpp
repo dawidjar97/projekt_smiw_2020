@@ -28,7 +28,7 @@ String writeAPIKey = "HRDDRV3GPRPSUPBB";
 String channelID = "1048994";
 String nrTel = "515303896";
 String lastLocation = "brak";
-String GPS_position = "";
+String a9gAnswer = "";
 int separator=33;
 String topic ="channels/" + String( channelID ) + "/publish/"+String(writeAPIKey);
 
@@ -36,7 +36,7 @@ SoftwareSerial swSer(14, 12, false);
 
 int A9GPOWERON();
 void A9GMQTTCONNECT();
-String sendData(String command, const int timeout, boolean debug);
+void sendData(String command, const int timeout, boolean debug);
 
 void setup()
 {
@@ -75,7 +75,7 @@ void setup()
 
   
 
-    if(!loadConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, GPS_position)) 
+    if(!loadConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
         Serial.println("Something went wrong loading config file. Erasing config file");
@@ -102,11 +102,15 @@ void setup()
     digitalWrite(A9G_POFF, LOW); 
     digitalWrite(A9G_LOWP, HIGH);
 
-    Serial.println("After 2s A9G will POWER ON.");
+    #if DEBUG
+      Serial.println("After 2s A9G will POWER ON.");
+    #endif
     delay(2000);
     if(A9GPOWERON()==1)
     {
+      #if DEBUG
         Serial.println("A9G POWER ON.");
+      #endif
     }
 
     delay(5000);
@@ -158,7 +162,7 @@ void setup()
         if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), lastLocation)) 
         {
           #if DEBUG
-            Serial.println("Something went horribly wrong.");
+            Serial.println("Something went wrong.");
             pinMode(INTERNAL_LED, OUTPUT);
             digitalWrite(INTERNAL_LED, HIGH);
           #endif
@@ -179,27 +183,28 @@ void setup()
 
 void loop()
 { 
-  if(espReboot) {
+  if(espReboot) 
+  {
     delay(5000);
     server.end();
     WiFi.softAPdisconnect();
     ESP.restart();
   }
 
-  GPS_position=sendData("AT+LOCATION=2",1000,DEBUG);
-  if( GPS_position.indexOf("OK") >= 0 )
+  sendData("AT+LOCATION=2",1000,DEBUG);
+  if( a9gAnswer.indexOf("OK") >= 0 )
   {
-    String LG=GPS_position.substring(17,43);
-    for(uint8_t i=0;i<GPS_position.length();i++)
+    String LG=a9gAnswer.substring(17,43);
+    for(uint8_t i=0;i<a9gAnswer.length();i++)
     {
-      if(GPS_position[i]==',')
+      if(a9gAnswer[i]==',')
       {
         separator=i;
         break;
       }
     }
-    String payload = String("field1=" + String(GPS_position.substring(separator-9,separator)) + "&field2=" + String(GPS_position.substring(separator+1,separator+10)));
-    lastLocation=String(GPS_position.substring(separator-9,separator))+", "+String(GPS_position.substring(separator+1,separator+10));
+    String payload = String("field1=" + String(a9gAnswer.substring(separator-9,separator)) + "&field2=" + String(a9gAnswer.substring(separator+1,separator+10)));
+    lastLocation=String(a9gAnswer.substring(separator-9,separator))+", "+String(a9gAnswer.substring(separator+1,separator+10));
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -208,28 +213,31 @@ void loop()
         digitalWrite(INTERNAL_LED, HIGH);
       #endif
     }
-    Serial.println(payload);
+    #if DEBUG
+      Serial.println(payload);
+    #endif
     String command="AT+MQTTPUB=\""+ topic + "\""+ ","+"\""+ payload + "&status=MQTTPUBLISH" + "\""+",0,0,0";
-    //Serial.println(command);
     //sendData("AT+MQTTPUB=\"channels/1048994/publish/HRDDRV3GPRPSUPBB\",\"field1=128&field2=64&status=MQTTPUBLISH\",0,0,0",1000,DEBUG);
     sendData(command,5000,DEBUG);
-    /*delay(1000);
-    if( GPS_position.indexOf("OK") >= 0 )
+    if( a9gAnswer.indexOf("OK") >= 0 )
     {
+      #if DEBUG
+        Serial.println("MQTT sent");
+      #endif
       delay(50000);
     }
     else
     {
-      sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",1000,DEBUG);
-    }*/
-    delay(50000);
+      sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
+    }
+    delay(500000);
   }
   delay(10000);
 
 }
-String sendData(String command, const int timeout, boolean debug)
+void sendData(String command, const int timeout, boolean debug)
 {
-    String response = "";    
+    a9gAnswer = "";    
     swSer.print(command+'\r'); 
     long int time = millis();   
     while( (time+timeout) > millis())
@@ -237,14 +245,12 @@ String sendData(String command, const int timeout, boolean debug)
       while(swSer.available())
       {       
         char c = swSer.read(); 
-        response+=c;
+        a9gAnswer+=c;
       }  
     }    
-    if(debug)
-    {
-      Serial.print(response);
-    }    
-    return response;
+    #if DEBUG
+      Serial.print(a9gAnswer);
+    #endif
 }
 
 int A9GPOWERON()
@@ -253,17 +259,20 @@ int A9GPOWERON()
   delay(3000);
   digitalWrite(A9G_PON, HIGH);
   delay(5000);
-  String msg = String("");
-  msg=sendData("AT",1000,DEBUG);
-  if( msg.indexOf("OK") >= 0 )
+  sendData("AT",1000,DEBUG);
+  if(a9gAnswer.indexOf("OK") >= 0 )
   {
+    #if DEBUG
       Serial.println("GET OK");
-      return 1;
+    #endif
+    return 1;
   }
   else 
   {
+    #if DEBUG
       Serial.println("NOT GET OK");
-      return 0;
+    #endif
+    return 0;
   }
 }
 
@@ -284,12 +293,10 @@ void A9GMQTTCONNECT()
   delay(1000);
   sendData("AT+MQTTDISCONN",5000,DEBUG);  //disc
   delay(2000);
-  String msg=sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
-  if( msg.indexOf("OK") >= 0 )
+  sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
+  if( a9gAnswer.indexOf("OK") >= 0 )
   {
     Serial.println("A9G CONNECTED to the ThingSpeak");
   }
- delay(2000);
- //sendData("AT+MQTTPUB=\"channels/1048994/publish/HRDDRV3GPRPSUPBB\",\"field1=128&field2=64&status=MQTTPUBLISH\",0,0,0",1000,DEBUG);
  }
 
