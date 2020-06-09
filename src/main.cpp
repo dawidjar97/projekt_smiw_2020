@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
-#include "configurator.h"
 #include <SoftwareSerial.h>
 #include <stdio.h>
+#include "configurator.h"
 
 #define INTERNAL_LED 2
 #define RESET_BUTTON_PIN 0
@@ -18,25 +18,33 @@
 #define A9G_WAKE    13  //ESP12 GPIO13 A9/A9G WAKE
 #define A9G_LOWP    2  //ESP12 GPIO2 A9/A9G ENTER LOW POWER MODULE
 
+/* Global Variables */
 
 AsyncWebServer server(HTTP_SERVER_PORT);
+SoftwareSerial swSer(14, 12, false);
 
 bool espReboot = false;
 bool buttonState = false;
+bool config = 1;
 
+/* Memory Strings */
 String writeAPIKey = "HRDDRV3GPRPSUPBB";
 String channelID = "1048994";
 String nrTel = "515303896";
 String lastLocation = "brak";
+
+String batteryStatus = "";
+String dateTime = "";
+
+/* Communication Strings */
 String a9gAnswer = "";
+String command = "";
 int separator=33;
-String topic ="channels/" + String( channelID ) + "/publish/"+String(writeAPIKey);
 
-SoftwareSerial swSer(14, 12, false);
-
+/* Local Functions */
 int A9GPOWERON();
 void A9GMQTTCONNECT();
-void sendData(String command, const int timeout, boolean debug);
+void a9gCommunication(String command, const int timeout);
 
 void setup()
 {
@@ -56,7 +64,6 @@ void setup()
   if (buttonState) //Usuniecie konfiguracji
   {
     deleteFile(SPIFFS, CONFIG_PATH);
-    
     #if DEBUG
       Serial.println("Configuration deleted, system restart");
     #endif
@@ -73,8 +80,6 @@ void setup()
       Serial.println("Configuration loaded");
     #endif
 
-  
-
     if(!loadConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -89,8 +94,7 @@ void setup()
     //config loaded
 
     WiFi.mode(WIFI_OFF);
-
-    topic ="channels/" + String( channelID ) + "/publish/"+String(writeAPIKey);
+    server.end();
 
     swSer.begin(A9_BAUD_RATE, SWSERIAL_8N1, 14, 12, false, 128);
 
@@ -113,12 +117,12 @@ void setup()
       #endif
     }
 
-    delay(5000);
-    A9GMQTTCONNECT();
-    delay(3000);
-    sendData("AT+GPS=1",1000,DEBUG);
-    delay(5000);
+    /* SMS prep */
+    a9gCommunication("AT+CSCS=\"GSM\"",1000);
+    a9gCommunication("AT+CMGF=1",1000);
 
+    A9GMQTTCONNECT();
+    a9gCommunication("AT+GPS=1",1000);
   } 
   else
   { //config not loaded
@@ -190,20 +194,22 @@ void loop()
     WiFi.softAPdisconnect();
     ESP.restart();
   }
-
-  sendData("AT+LOCATION=2",1000,DEBUG);
+  a9gCommunication("AT+CBC?",1000);
+  a9gCommunication("AT+CCLK?",1000);
+  a9gCommunication("AT+LOCATION=2",1000);
   if( a9gAnswer.indexOf("OK") >= 0 )
   {
-    for(uint8_t i=0;i<a9gAnswer.length();i++)
+    /*for(uint8_t i=0;i<a9gAnswer.length();i++)
     {
       if(a9gAnswer[i]==',')
       {
         separator=i;
         break;
       }
-    }
-    String payload = String("field1=" + String(a9gAnswer.substring(separator-9,separator)) + "&field2=" + String(a9gAnswer.substring(separator+1,separator+10)));
-    lastLocation=String(a9gAnswer.substring(separator-9,separator))+", "+String(a9gAnswer.substring(separator+1,separator+10));
+    }*/
+    separator= a9gAnswer.indexOf(",");
+    //String payload = String("field1=" + String(a9gAnswer.substring(separator-9,separator)) + "&field2=" + String(a9gAnswer.substring(separator+1,separator+10)));
+    lastLocation=(a9gAnswer.substring(separator-9,separator))+", "+(a9gAnswer.substring(separator+1,separator+10));
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -213,42 +219,96 @@ void loop()
       #endif
     }
     #if DEBUG
-      Serial.println(payload);
+      Serial.println(lastLocation);
     #endif
-    String command="AT+MQTTPUB=\""+ topic + "\""+ ","+"\""+ payload + "&status=MQTTPUBLISH" + "\""+",0,0,0";
-    //sendData("AT+MQTTPUB=\"channels/1048994/publish/HRDDRV3GPRPSUPBB\",\"field1=128&field2=64&status=MQTTPUBLISH\",0,0,0",1000,DEBUG);
-    sendData(command,5000,DEBUG);
+    command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\""+ ","+"\"field1=" + (a9gAnswer.substring(separator-9,separator)) + "&field2=" + (a9gAnswer.substring(separator+1,separator+10)) + "&status=MQTTPUBLISH" + "\""+",0,0,0";
+    a9gCommunication(command,5000);
     if( a9gAnswer.indexOf("OK") >= 0 )
     {
       #if DEBUG
         Serial.println("MQTT sent");
       #endif
-      delay(500000);
+      a9gCommunication("",240000);
     }
     else
     {
+      config=1;
       A9GMQTTCONNECT();
     }
   }
-  delay(60000);
+  Serial.println("spij na 60 sekund");
+  a9gCommunication("",60000);
+  Serial.println("Koniec loopa");
 
 }
-void sendData(String command, const int timeout, boolean debug)
+void sendSms(String msg)
 {
-    a9gAnswer = "";    
-    swSer.print(command+'\r'); 
-    long int time = millis();   
-    while( (time+timeout) > millis())
-    {
-      while(swSer.available())
-      {       
-        char c = swSer.read(); 
-        a9gAnswer+=c;
-      }  
-    }    
+  swSer.println("AT+CMGS=\""+ nrTel + "\"");
+  swSer.println(msg); 
+  swSer.write(26); 
+}
+void clearSms()
+{
+  swSer.println("AT+CPMS=\"SM\",\"ME\"");
+  swSer.println("AT+CMGD=1,4");
+}
+void a9gCommunication(String command, const int timeout)
+{
+  a9gAnswer = "";
+  if(command!="")  
+    swSer.print(command+'\r');
+  //delay(10);
+  long int time = millis(); 
+  long int condition = time+timeout;
+  while( (condition) > millis())
+  {
+    while(swSer.available())
+    {       
+      char c = swSer.read(); 
+      a9gAnswer+=c;
+      if(a9gAnswer.length()==2)
+      {
+        //if(!config)
+          condition=millis()+1500;
+      }
+    }  
+  }    
+  #if DEBUG
+    Serial.print(a9gAnswer);
+  #endif
+  /* Checking if message is a SMS */
+  if(a9gAnswer.indexOf("MESSAGE") >= 0)
+  {
     #if DEBUG
-      Serial.print(a9gAnswer);
+    Serial.println("Received a SMS");
     #endif
+    if(a9gAnswer.indexOf("Bateria") >= 0)
+    {
+      sendSms("Stan baterii: "+batteryStatus+"%"); 
+    }
+    else if(a9gAnswer.indexOf("Lokalizuj") >= 0)
+    {
+      sendSms("Ostatnia lokalizacja: "+lastLocation);
+    }
+    else if(a9gAnswer.indexOf("Info") >= 0)
+    {
+      sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+dateTime+"\n "+"Bateria: "+batteryStatus+"%");
+    }
+  }
+  else if(a9gAnswer.indexOf("CBC:") >= 0)
+  {
+    separator = a9gAnswer.indexOf("CBC:");
+    batteryStatus=a9gAnswer.substring(separator+4,separator+11);
+  }
+  else if(a9gAnswer.indexOf("CCLK:") >= 0)
+  {
+    separator = a9gAnswer.indexOf("CCLK:");
+    dateTime=a9gAnswer.substring(separator+7,separator+27);
+  }
+  else if(a9gAnswer.indexOf("SMSFULL") >= 0 )
+  {
+    clearSms();
+  }
 }
 
 int A9GPOWERON()
@@ -257,7 +317,7 @@ int A9GPOWERON()
   delay(3000);
   digitalWrite(A9G_PON, HIGH);
   delay(5000);
-  sendData("AT",1000,DEBUG);
+  a9gCommunication("AT",1000);
   if(a9gAnswer.indexOf("OK") >= 0 )
   {
     #if DEBUG
@@ -276,25 +336,25 @@ int A9GPOWERON()
 
 void A9GMQTTCONNECT()
 {
-  delay(4000);
-  sendData("AT+CGATT=1",1000,DEBUG); //Attach GPRS
-  delay(1000);
-  sendData("AT+CIPMUX=0",1000,DEBUG); //enable single IP connection
-  delay(1000);
-  sendData("AT+CSTT=\"plus\",\"\",\"\"",1000,DEBUG);  //APN
-  delay(1000);
-  sendData("AT+CIICR",1000,DEBUG);  //start wireless connection
-  delay(1000);
-  sendData("AT+CIFSR",1000,DEBUG);  //IP
-  delay(1000);
-  sendData("AT+CGACT=1,1",1000,DEBUG);  //start
-  delay(1000);
-  sendData("AT+MQTTDISCONN",5000,DEBUG);  //disc
-  delay(2000);
-  sendData("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000,DEBUG);
-  if( a9gAnswer.indexOf("OK") >= 0 )
+  /* GPRS */
+  a9gCommunication("AT+CGATT=1",1000); //Attach GPRS
+  a9gCommunication("AT+CIPMUX=0",1000); //enable single IP connection
+  a9gCommunication("AT+CSTT=\"plus\",\"\",\"\"",1000);  //APN
+  a9gCommunication("AT+CIICR",1000);  //start wireless connection
+  a9gCommunication("AT+CIFSR",1000);  //IP
+  a9gCommunication("AT+CGACT=1,1",1000);  //start
+  a9gCommunication("AT+MQTTDISCONN",2000);  //disconnect from MQTT server
+  a9gCommunication("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000);  //connect to MQTT server
+  if(a9gAnswer.indexOf("OK") >= 0 )
   {
     Serial.println("A9G CONNECTED to the ThingSpeak");
   }
- }
+  else
+  {
+    A9GMQTTCONNECT();
+  }
+
+  config=0;
+  
+}
 

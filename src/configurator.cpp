@@ -79,7 +79,7 @@ bool loadConfiguration(fs::FS &fs, String & nrTel, String & writeAPIKey, String 
         Serial.print("nrTel: "); Serial.println(nrTel);
         Serial.print("writeAPIKey: "); Serial.println(writeAPIKey);
         Serial.print("channelID: "); Serial.println(channelID);
-        Serial.print("location: "); Serial.println(lastLocation);
+        Serial.print("last location: "); Serial.println(lastLocation);
     #endif
 
     return true;
