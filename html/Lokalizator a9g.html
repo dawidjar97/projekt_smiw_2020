@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="style.css">
+        <title>Lokalizator A9G</title>
+    </head>
+    <body>
+        <div class="main-box">
+            <h1>Lokalizator</h1>
+            <div id="map">
+
+            </div>
+        </div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDAkvGTo2SsygzzbWq3UmXlO4eQkKx2X2I&"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+    var map;
+    var x=0,y=0;
+    function loadMap()
+    {
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/1/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;x=Number(m.field1);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/2/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;y=Number(m.field2); }).done(function() {initialize();});
+    }
+    function initialize() 
+    {
+        var mapOptions = {zoom: 18,center: {lat: x, lng: y}};
+        map = new google.maps.Map(document.getElementById('map'),mapOptions);
+        var marker = new google.maps.Marker({position: {lat: x, lng: y},map: map});
+        var infowindow = new google.maps.InfoWindow({content: '<p>Ostatnia lokalizacja:' + marker.getPosition() + '</p>'});
+        google.maps.event.addListener(marker, 'click', function() {infowindow.open(map, marker);});
+    }
+    window.setInterval(loadMap, 300000);
+    loadMap();
+    </script>
+    </body>
+</html>
