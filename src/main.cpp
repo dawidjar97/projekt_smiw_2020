@@ -32,7 +32,8 @@ uint8_t reconfigCounter = 0;
 String writeAPIKey = "HRDDRV3GPRPSUPBB";
 String channelID = "1048994";
 String nrTel = "515303896";
-String lastLocation = "brak";
+String lastLocation = "empty";
+String lastLocationTime = "empty";
 
 String batteryStatus = "";
 String dateTime = "";
@@ -196,6 +197,7 @@ void loop()
     ESP.restart();
   }
   a9gCommunication("AT+CBC?",1000);
+  a9gCommunication("AT+CCLK?",1000);
   a9gCommunication("AT+LOCATION=2",1000);
   if( a9gAnswer.indexOf(",") >= 0 )
   {
@@ -207,10 +209,10 @@ void loop()
         break;
       }
     }*/
+    lastLocationTime=dateTime;
     separator= a9gAnswer.indexOf(",");
     //String payload = String("field1=" + String(a9gAnswer.substring(separator-9,separator)) + "&field2=" + String(a9gAnswer.substring(separator+1,separator+10)));
     lastLocation=(a9gAnswer.substring(separator-9,separator))+", "+(a9gAnswer.substring(separator+1,separator+10));
-    a9gCommunication("AT+CCLK?",1000);
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -229,27 +231,24 @@ void loop()
       #if DEBUG
         Serial.println("MQTT sent");
       #endif
-      a9gCommunication("",240000);
+      a9gCommunication("",240000);  //4minutes break
     }
     else
     {
       config=1;
-      if(reconfigCounter++==5)
-      {
-        ESP.restart();
-      }
       A9GMQTTCONNECT();
+      a9gCommunication(command,5000);
     }
   }
-  Serial.println("spij na 60 sekund");
+  Serial.println("60 seconds break");
   a9gCommunication("",60000);
-  Serial.println("Koniec loopa");
+  Serial.println("End of loop");
 
 }
 void sendSms(String msg)
 {
-  swSer.println("AT+CMGS=\""+ nrTel + "\"");
-  swSer.println(msg); 
+  swSer.print("AT+CMGS=\""+ nrTel + "\"\r");
+  swSer.println(msg);
   swSer.write(26); 
 }
 void clearSms()
@@ -274,7 +273,7 @@ void a9gCommunication(String command, const int timeout)
       if(a9gAnswer.length()==2)
       {
         //if(!config)
-          condition=millis()+1500;
+          condition=millis()+2000;
       }
     }  
   }    
@@ -297,7 +296,7 @@ void a9gCommunication(String command, const int timeout)
     }
     else if(a9gAnswer.indexOf("Info") >= 0)
     {
-      sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+dateTime+"\n "+"Bateria: "+batteryStatus+"%");
+      sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+lastLocationTime+"\n "+"Bateria: "+batteryStatus+"%");
     }
   }
   else if(a9gAnswer.indexOf("CBC:") >= 0)
@@ -350,12 +349,16 @@ void A9GMQTTCONNECT()
   a9gCommunication("AT+CGACT=1,1",1000);  //start
   a9gCommunication("AT+MQTTDISCONN",2000);  //disconnect from MQTT server
   a9gCommunication("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000);  //connect to MQTT server
-  if(a9gAnswer.indexOf("OK") >= 0 )
+  if(a9gAnswer.indexOf("OK") >= 0 ) //check module answer
   {
     Serial.println("A9G CONNECTED to the ThingSpeak");
   }
   else
   {
+    if(reconfigCounter++==5)
+      {
+        ESP.restart();
+      }
     A9GMQTTCONNECT();
   }
 
