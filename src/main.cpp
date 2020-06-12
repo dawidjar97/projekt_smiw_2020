@@ -47,6 +47,7 @@ uint8_t separator=33;
 int A9GPOWERON();
 void A9GMQTTCONNECT();
 void a9gCommunication(String command, const int timeout);
+void clearSms();
 
 void setup()
 {
@@ -124,6 +125,7 @@ void setup()
     a9gCommunication("AT+CMGF=1",1000);
 
     A9GMQTTCONNECT();
+    clearSms();
     a9gCommunication("AT+GPS=1",1000);
   } 
   else
@@ -272,7 +274,7 @@ void a9gCommunication(String command, const int timeout)
       a9gAnswer+=c;
       if(a9gAnswer.length()==2)
       {
-        //if(!config)
+        if(!config)
           condition=millis()+2000;
       }
     }  
@@ -298,6 +300,7 @@ void a9gCommunication(String command, const int timeout)
     {
       sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+lastLocationTime+"\n "+"Bateria: "+batteryStatus+"%");
     }
+    clearSms();
   }
   else if(a9gAnswer.indexOf("CBC:") >= 0)
   {
