@@ -31,6 +31,7 @@
         var infowindow = new google.maps.InfoWindow({content: '<p>Ostatnia lokalizacja:' + marker.getPosition() + '</p>'});
         google.maps.event.addListener(marker, 'click', function() {infowindow.open(map, marker);});
     }
+    window.setTimeout(loadMap, 300);
     window.setInterval(loadMap, 300000);
     loadMap();
     </script>

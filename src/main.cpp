@@ -26,6 +26,7 @@ SoftwareSerial swSer(14, 12, false);
 bool espReboot = false;
 bool buttonState = false;
 bool config = 1;
+uint8_t reconfigCounter = 0;
 
 /* Memory Strings */
 String writeAPIKey = "HRDDRV3GPRPSUPBB";
@@ -39,7 +40,7 @@ String dateTime = "";
 /* Communication Strings */
 String a9gAnswer = "";
 String command = "";
-int separator=33;
+uint8_t separator=33;
 
 /* Local Functions */
 int A9GPOWERON();
@@ -195,9 +196,8 @@ void loop()
     ESP.restart();
   }
   a9gCommunication("AT+CBC?",1000);
-  a9gCommunication("AT+CCLK?",1000);
   a9gCommunication("AT+LOCATION=2",1000);
-  if( a9gAnswer.indexOf("OK") >= 0 )
+  if( a9gAnswer.indexOf(",") >= 0 )
   {
     /*for(uint8_t i=0;i<a9gAnswer.length();i++)
     {
@@ -210,6 +210,7 @@ void loop()
     separator= a9gAnswer.indexOf(",");
     //String payload = String("field1=" + String(a9gAnswer.substring(separator-9,separator)) + "&field2=" + String(a9gAnswer.substring(separator+1,separator+10)));
     lastLocation=(a9gAnswer.substring(separator-9,separator))+", "+(a9gAnswer.substring(separator+1,separator+10));
+    a9gCommunication("AT+CCLK?",1000);
     if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation)) 
     {
       #if DEBUG
@@ -233,6 +234,10 @@ void loop()
     else
     {
       config=1;
+      if(reconfigCounter++==5)
+      {
+        ESP.restart();
+      }
       A9GMQTTCONNECT();
     }
   }
