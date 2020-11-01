@@ -41,8 +41,14 @@ div.main-box
     display: grid;
     gap: 8px;
 }
+
 #map 
 {
     height: 400px;
     width: 100%;
+}
+
+#info
+{
+    margin-top: 5px;
 }

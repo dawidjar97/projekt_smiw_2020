@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "FS.h"
-
+#include <FS.h>
+#include <stdio.h>
 #define DEBUG 1 //flaga debugowania
 #define CONFIG_PATH "/cfg.file"
 

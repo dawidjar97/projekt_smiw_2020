@@ -4,6 +4,7 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="style.css">
+        <link rel="icon" type="image/png" href="favicon.ico">
         <title>Lokalizator A9G</title>
     </head>
     <body>
@@ -12,15 +13,20 @@
             <div id="map">
 
             </div>
+            <p id="info"></p>
+            <p id="battery"></p>
         </div>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDAkvGTo2SsygzzbWq3UmXlO4eQkKx2X2I&"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
     var map;
     var x=0,y=0;
+    var locDate="14-05-1997",battery=0;
     function loadMap()
     {
         $.getJSON("https://api.thingspeak.com/channels/1048994/fields/1/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;x=Number(m.field1);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/3/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;locDate=String(m.field3);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/4/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;battery=Number(m.field4);});
         $.getJSON("https://api.thingspeak.com/channels/1048994/fields/2/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;y=Number(m.field2); }).done(function() {initialize();});
     }
     function initialize() 
@@ -28,12 +34,15 @@
         var mapOptions = {zoom: 18,center: {lat: x, lng: y}};
         map = new google.maps.Map(document.getElementById('map'),mapOptions);
         var marker = new google.maps.Marker({position: {lat: x, lng: y},map: map});
-        var infowindow = new google.maps.InfoWindow({content: '<p>Ostatnia lokalizacja:' + marker.getPosition() + '</p>'});
+        var infowindow = new google.maps.InfoWindow({content: "<p>Ostatnia lokalizacja: " + marker.getPosition() + " " + locDate + '</p>'});
         google.maps.event.addListener(marker, 'click', function() {infowindow.open(map, marker);});
+        document.getElementById("info").innerHTML="Data ostatniej lokalizacji: "+locDate+"<br>";
+        document.getElementById("battery").innerHTML="Stan baterii: " + battery + "%";
     }
     window.setTimeout(loadMap, 300);
     window.setInterval(loadMap, 300000);
     loadMap();
+    
     </script>
     </body>
 </html>
