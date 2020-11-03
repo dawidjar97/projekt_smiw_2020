@@ -14,7 +14,7 @@
 
 AsyncWebServer server(HTTP_SERVER_PORT);  //Serwer do obsługi konfiguracji
 A9Gmodule locator;
-
+bool espReboot=0;
 /*
 bool espReboot = false; //flaga restartu urządzenia po wstępnej konfiguracji
 bool config = 1;  //flaga konfiguracji urządzenia
@@ -92,12 +92,7 @@ void setup()
           Serial.print("channel-ID: "); Serial.println(chID->value().c_str());
         #endif
 
-        request->send(SPIFFS, "/initial_config_ready.html", String(), false, [&tel](const String& var) 
-        {
-          if(var == "NAZWA_SIECI") 
-            return tel->value();
-          return String();
-        });
+        request->send(SPIFFS, "/initial_config_ready.html");
 
         if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), "null", "null"))//Zapis konfiguracji do pamięci
         {
@@ -108,10 +103,7 @@ void setup()
           #endif
         }
         //restart urządzenia po zakończeniu konfiguracji
-        delay(5000);
-        server.end();
-        WiFi.softAPdisconnect();
-        ESP.restart();
+        espReboot=1;
       }
     });
 
@@ -126,5 +118,12 @@ void setup()
 void loop()
 { 
   locator.executeTask();
+  if(espReboot) //restart urządzenia po konfiguracji
+  {
+    delay(5000);
+    server.end();
+    WiFi.softAPdisconnect();
+    ESP.restart();
+  }
 }
 

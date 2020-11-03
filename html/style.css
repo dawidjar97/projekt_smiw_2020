@@ -48,6 +48,8 @@ div.main-box
     width: 100%;
 }
 
+#mapid { height: 400px; }
+
 #info
 {
     margin-top: 5px;

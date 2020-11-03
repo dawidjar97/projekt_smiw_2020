@@ -52,6 +52,15 @@ void A9Gmodule::checkMessage()
     separator = a9gAnswer.indexOf("CBC:");
     batteryStatus=a9gAnswer.substring(separator+4,separator+11);
     batteryLevel=a9gAnswer.substring(separator+8,separator+11);
+    batteryLevel.trim();
+    #if DEBUG
+      Serial.print("String: ");
+      Serial.println(a9gAnswer);
+      Serial.print("batteryLevel: ");
+      Serial.println(batteryLevel);
+      Serial.print("batteryStatus: ");
+      Serial.println(batteryStatus);
+    #endif
   }
   else if(a9gAnswer.indexOf("CCLK:") >= 0)  //pobranie aktualnej daty i czasu
   {
@@ -139,6 +148,7 @@ void A9Gmodule::A9GMQTTCONNECT()
     A9GMQTTCONNECT(); //ponowne wywołanie funkcji
   }
   config=0; //restart flagi konfiguracji
+  a9gCommunication("AT+CSCS=\"GSM\"",1000); //ustawienie kodowania
 }
 
 void A9Gmodule::executeTask()
@@ -192,10 +202,9 @@ void A9Gmodule::executeTask()
         #if DEBUG
         Serial.println("60 sekund oczekiwania na komunikacje");
         #endif
+        command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\",\"field4=" + batteryLevel + "&status=MQTTPUBLISH\""+",0,0,0";
+        a9gCommunication(command,5000); //Wysłanie pakietu MQTT
         a9gCommunication("",60000); //Minuta oczekiwania na SMS
-        command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\""+ ","+
-            "\"field4="  + batteryLevel + "&status=MQTTPUBLISH" + "\""+",0,0,0";
-            a9gCommunication(command,5000); //Wysłanie pakietu MQTT
         #if DEBUG
         Serial.println("Koniec zadania");
         #endif

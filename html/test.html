@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+        <link rel="icon" type="image/png" href="favicon.ico">
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+        <title>Lokalizator A9G</title>
+    </head>
+    <body>
+        <div class="main-box">
+            <h1>Lokalizator</h1>
+            <div id="mapid"></div>
+            <p id="info"></p>
+            <p id="battery"></p>
+        </div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDAkvGTo2SsygzzbWq3UmXlO4eQkKx2X2I&"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+    var map;
+    var marker;
+    var circle;
+    var x=0,y=0;
+    var locDate="data",battery=0;
+    
+    function loadData()
+    {
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/1/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;x=Number(m.field1);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/3/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;locDate=String(m.field3);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/4/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;battery=Number(m.field4);});
+        $.getJSON("https://api.thingspeak.com/channels/1048994/fields/2/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;y=Number(m.field2); });
+    }
+    function initialize() 
+    {
+
+        map = L.map('mapid').setView([x, y], 16);
+
+        var title = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        marker = L.marker([x, y]).addTo(map)
+            .bindPopup('Ostatnia lokalizacja: <br>'+x+', '+y+' <br> '+locDate)
+            .openPopup();
+
+        circle = L.circle([x, y], {
+            color: 'cyan',
+            fillColor: 'blue',
+            fillOpacity: 0.2,
+            radius: 50
+        }).addTo(map);
+
+
+        document.getElementById("info").innerHTML="Data ostatniej lokalizacji: "+locDate+"<br>";
+        document.getElementById("battery").innerHTML="Stan baterii: " + battery + "%";
+    }
+    function update()
+    {
+        loadData();
+        marker.setLatLng([x,y]);
+        marker.bindPopup('Ostatnia lokalizacja: <br>'+x+', '+y+' <br> '+locDate);
+        circle.setLatLng([x,y]);
+        map.panTo([x,y]);
+        document.getElementById("info").innerHTML="Data ostatniej lokalizacji: "+locDate+"<br>";
+        document.getElementById("battery").innerHTML="Stan baterii: " + battery + "%";
+    }
+    loadData();
+    window.setTimeout(initialize, 300);
+    window.setInterval(update, 3000);
+    
+    
+    </script>
+    </body>
+</html>
