@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
+/* A9G GSM/GPRS module library */
+#include "A9Gmodule.h"
 
-#include "A9Gmodule.h" //biblioteka do osbługi modułu GSM/GPRS
-
+/* Hardware Serial baud speed rate */
 #define SERIAL_BAUD 115200
+
+/* WiFi and server defines */
 #define HTTP_SERVER_PORT 80
 #define DEFAULT_SSID "Lokalizator ESP12S"
 #define DEFAULT_PASSWORD "12345678"
@@ -15,39 +18,22 @@
 AsyncWebServer server(HTTP_SERVER_PORT);  //Serwer do obsługi konfiguracji
 A9Gmodule locator;
 bool espReboot=0;
-/*
-bool espReboot = false; //flaga restartu urządzenia po wstępnej konfiguracji
-bool config = 1;  //flaga konfiguracji urządzenia
-uint8_t reconfigCounter = 0;  //licznik kolejnych rekonfiguracji sieci
-*/
-
-/* Memory Strings *//*
-String writeAPIKey = "HRDDRV3GPRPSUPBB";
-String channelID = "1048994";
-String nrTel = "515303896";
-String lastLocation = "empty";
-String lastLocationTime = "empty";*/
-
-/* Temp Memory Strings  *//*
-String batteryStatus = "";
-String dateTime = "";*/
-
-/* Communication Strings *//*
-String a9gAnswer = "";
-String command = "";
-uint8_t separator=33; //zmienna używana do separacji współrzędnych GPS*/
 
 /* Local Functions */
 
 void setup()
 {
-  SPIFFS.begin(); //Start obsługi pamięci
+
+  /* Inicjalizacja obsługi pamięci */
+  SPIFFS.begin(); 
 
   #if DEBUG
-    Serial.begin(SERIAL_BAUD);  //Start serial
+    /* Uruchomienie komunikacji UART */
+    Serial.begin(SERIAL_BAUD);  
   #endif
   
-  if(isConfigurationCompleted(SPIFFS)) //Sprawdzenie czy plik konfiguracyjny istnieje
+  /* Sprawdzenie czy plik konfiguracyjny istnieje */
+  if(isConfigurationCompleted(SPIFFS)) 
   {
     #if DEBUG
       Serial.println("Configuration loaded");
@@ -65,7 +51,8 @@ void setup()
       Serial.println("Configuration not loaded");
     #endif
 
-    WiFi.softAP(DEFAULT_SSID, DEFAULT_PASSWORD);//stworzenie punktu dostępowego
+    /* Inicjalizacja punktu dostępowego */
+    WiFi.softAP(DEFAULT_SSID, DEFAULT_PASSWORD);
 
     /* Zdarzenia serwera */
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) 
@@ -102,13 +89,14 @@ void setup()
             digitalWrite(INTERNAL_LED, HIGH);
           #endif
         }
-        //restart urządzenia po zakończeniu konfiguracji
+        /* Restart urządzenia po zakończeniu konfiguracji */
         espReboot=1;
       }
     });
-
-    server.serveStatic("/static/", SPIFFS, "/static/");//Załadowanie dodatkowych plików
-    server.begin();//Start serwera
+    /* Załadowanie dodatkowych plików */
+    server.serveStatic("/static/", SPIFFS, "/static/");
+    /* Start serwera WWW */
+    server.begin();
     #if DEBUG
       Serial.println("Waiting for configuration");
     #endif
@@ -118,7 +106,8 @@ void setup()
 void loop()
 { 
   locator.executeTask();
-  if(espReboot) //restart urządzenia po konfiguracji
+  /* Restart urządzenia po konfiguracji */
+  if(espReboot)
   {
     delay(5000);
     server.end();

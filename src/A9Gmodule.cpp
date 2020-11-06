@@ -10,8 +10,10 @@ void A9Gmodule::sendSms(String msg)  //funkcja do wysyłania wiadomości SMS
 }
 void A9Gmodule::clearSms()
 {
-  serial->println("AT+CPMS=\"ME\",\"SM\""); //ustawienie miejsca przechowywania wiadomości SMS
-  serial->println("AT+CMGD=1,4"); //Usunięcie wszystkich wiadomości
+  /* Ustawienie miejsca przechowywania wiadomości SMS */
+  serial->println("AT+CPMS=\"ME\",\"SM\"");
+  /* Usunięcie wszystkich wiadomości */
+  serial->println("AT+CMGD=1,4");
 }
 
 void A9Gmodule::checkMessage()
@@ -24,15 +26,36 @@ void A9Gmodule::checkMessage()
     #endif
     if(a9gAnswer.indexOf("Bateria") >= 0) 
     {
-      sendSms("Stan baterii: "+batteryStatus+"%"); //wysłanie stanu baterii
+      /* Wysłanie stanu baterii */
+      sendSms("Stan baterii: "+batteryStatus+"%"); 
     }
     else if(a9gAnswer.indexOf("Lokalizuj") >= 0)  
     {
-      sendSms("Ostatnia lokalizacja: "+lastLocation); //wysłanie ostatniej lokalizacji
+      /* Wysłanie ostatniej lokalizacji */
+      sendSms("Ostatnia lokalizacja: "+lastLocation);
     }
     else if(a9gAnswer.indexOf("Info") >= 0)
     {
-      sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+lastLocationTime+"\n "+"Bateria: "+batteryStatus+"%");  //wysłanie wszystkich informacji
+      /* Wysłanie ostatniej lokalizacji i informacji o stanie baterii */
+      sendSms("Ostatnia lokalizacja:\n "+lastLocation+"\n "+lastLocationTime+"\n "+"Bateria: "+batteryStatus+"%");
+    }
+    else if(a9gAnswer.indexOf("ChangeTaskPeriod:") >= 0)
+    {
+      /* Zmiana częstotliwości sprawdzania lokalizacji i wysyłania danych do serwera MQTT */
+      uint8_t tempStr=a9gAnswer.indexOf("Period:");
+      uint32_t tempPeriod = (a9gAnswer.substring(tempStr+8,tempStr+14)).toInt();
+      #if DEBUG
+        Serial.print("Command ChangeTaskPeriod: ");
+        Serial.println(tempPeriod);
+      #endif
+      if(tempPeriod>MIN_TIME_PERIOD&&tempPeriod<MAX_TIME_PERIOD)
+      {
+        executeTaskTimePeriod=tempPeriod;
+        #if DEBUG
+        Serial.print("ChangeTaskPeriod set to: ");
+        Serial.println(tempPeriod);
+        #endif
+      }
     }
     else if(a9gAnswer.indexOf("?R3ST4RT!.") >= 0 )  //reset ustawień urządzenie
     {
@@ -47,20 +70,38 @@ void A9Gmodule::checkMessage()
       ESP.restart();  //restart urządzenia
     }
   }
-  else if(a9gAnswer.indexOf("CBC:") >= 0) //pobranie aktualnego stanu baterii
+  else if(a9gAnswer.indexOf("CBC:") >= 0)
   {
+    /* Pobranie aktualnego stanu baterii */
     separator = a9gAnswer.indexOf("CBC:");
     batteryStatus=a9gAnswer.substring(separator+4,separator+11);
     batteryLevel=a9gAnswer.substring(separator+8,separator+11);
     batteryLevel.trim();
     #if DEBUG
-      Serial.print("String: ");
-      Serial.println(a9gAnswer);
       Serial.print("batteryLevel: ");
       Serial.println(batteryLevel);
       Serial.print("batteryStatus: ");
       Serial.println(batteryStatus);
     #endif
+    /* Sprawdzenie stanu baterii */
+    if(batteryLevel.toInt()<LOW_BATTERY_THRESHOLD && lowBatteryFlag==0)
+    {
+      #if DEBUG
+        Serial.println("lowBatteryFlag set");
+      #endif
+      lowBatteryFlag = 1;
+      /* Wysłanie wiadomości tekstowej z komunikatem o niskim poziomie baterii */
+      sendSms("Uwaga, niski poziom baterii w urzadzeniu. Podłącz urządzenie do ładowania lub sprawdź czy akumulator pojazdu nie jest rozładowany.");
+    }
+    else if (batteryLevel.toInt()>HIGH_BATTERY_THRESHOLD && lowBatteryFlag==1)
+    {
+      #if DEBUG
+        Serial.println("lowBatteryFlag reset");
+      #endif
+      /* Reset flagi niskiego poziomu baterii */
+      lowBatteryFlag = 0;
+    }
+    
   }
   else if(a9gAnswer.indexOf("CCLK:") >= 0)  //pobranie aktualnej daty i czasu
   {
@@ -75,27 +116,39 @@ void A9Gmodule::checkMessage()
 
 void A9Gmodule::a9gCommunication(String command, const int timeout)  //Funkcja do komunikacji dwustronnej z modułem GPRS/GPS
 {
-  a9gAnswer = ""; //wyczyszczenie odpowiedzi
-  if(command!="")  
-    serial->print(command+'\r');  //wyslanie komendy
-  long int time = millis();   //pobranie aktualnego czasu
-  long int condition = time+timeout;  //ustalenie warunku wyjścia
+  /* Wyczyszczenie odpowiedzi */
+  a9gAnswer = ""; 
+  /* Wyslanie komendy (jeżeli takowa została przekazana) */
+  if(command!="")
+  {
+    serial->print(command+'\r'); 
+  }
+     
+  /* Pobranie aktualnego czasu */
+  long int time = millis();
+  /* Ustalenie warunku wyjścia */
+  long int condition = time+timeout;
+  /* Pętla while */
   while( (condition) > millis())
   {
     while(serial->available())
     {       
-      char c = serial->read();  //pobranie odpowiedzi
+      /* Pobranie odpowiedzi */
+      char c = serial->read();  
       a9gAnswer+=c;
-      if(a9gAnswer.length()==2) //Jeżeli odebrano już 2 znaki
+      /* Jeżeli odebrano już 2 znaki aktualizacja warunku wyjścia */
+      if(a9gAnswer.length()==2) 
       {
+        /* Jeżeli to oczekiwanie na wiadomość po otrzymaniu wyniku, czekaj jeszcze 1s i wyjdź z pętli */
         if(command=="")
-          condition=millis()+1000;  //jeżeli to zwykła komenda po otrzymaniu wyniku, czekaj jeszcze 1s i wyjdź z pętli
+          condition=millis()+1000;
       }
     }  
   }    
   #if DEBUG
     Serial.print(a9gAnswer);
   #endif
+  /* Sprawdzenie wiadomości zwrotnej */
   checkMessage();
 }
 
@@ -106,8 +159,10 @@ int A9Gmodule::A9GPOWERON()
   delay(3000);
   digitalWrite(A9G_PON, HIGH);
   delay(5000);
-  a9gCommunication("AT",2000);  //wysłanie komendy AT do modułu
-  if(a9gAnswer.indexOf("OK") >= 0 ) //sprawdzenie odpowiedzi
+  /* Wysłanie komendy AT do modułu */
+  a9gCommunication("AT",2000);
+  /* Sprawdzenie odpowiedzi */
+  if(a9gAnswer.indexOf("OK") >= 0 ) 
   {
     #if DEBUG
       Serial.println("GET OK");
@@ -133,112 +188,146 @@ void A9Gmodule::A9GMQTTCONNECT()
   a9gCommunication("AT+CIFSR",1000);  //IP
   a9gCommunication("AT+CGACT=1,1",1000);  //start
   a9gCommunication("AT+MQTTDISCONN",2000);  //disconnect from MQTT server
-  a9gCommunication("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000);  //połączenie do serwera MQTT
-  if(a9gAnswer.indexOf("OK") >= 0 ) //sprawdzenie odpowiedzi modułu
+  /* Połączenie do serwera MQTT */
+  a9gCommunication("AT+MQTTCONN=\"mqtt.thingspeak.com\",1883,\"1048994\",120,1",5000);
+  /* sprawdzenie odpowiedzi modułu */
+  if(a9gAnswer.indexOf("OK") >= 0 )
   {
     Serial.println("A9G CONNECTED to the ThingSpeak");
     reconfigCounter=0;  //restart flagi rekonfiguracji
   }
   else
   {
+    /* Zabepieczenie */
     if(reconfigCounter++==5)
       {
         ESP.restart();  //restart urządzenie po 5 kolejnych rekonfiguracjach
       }
-    A9GMQTTCONNECT(); //ponowne wywołanie funkcji
+    /* Ponowne wywołanie funkcji */
+    A9GMQTTCONNECT();
   }
-  config=0; //restart flagi konfiguracji
-  a9gCommunication("AT+CSCS=\"GSM\"",1000); //ustawienie kodowania
+  /* Restart flagi konfiguracji */
+  config=0;
+  /* Ustawienie kodowania wiadomości tekstowych */
+  a9gCommunication("AT+CSCS=\"GSM\"",1000);
 }
 
 void A9Gmodule::executeTask()
 {
-    if(!config) //normalny tryb pracy
+    /* Sprawdzenie trybu pracy */
+    if(!config)
     {
-        a9gCommunication("AT+CBC?",1000); //Stan baterii
-        a9gCommunication("AT+CCLK?",1000);  //Aktualna data i czas
-        a9gCommunication("AT+LOCATION=2",1000); //Lokalizacja
-        if(a9gAnswer.indexOf(",") >= 0 && a9gAnswer.indexOf("GPS NOT FIX")==-1)//sprawdzenie czy zwrócono lokalizacje
+      /* Aktualizacja stanu baterii */
+      a9gCommunication("AT+CBC?",1000);
+      /* Aktualizacja daty i godziny */
+      a9gCommunication("AT+CCLK?",1000);
+      /* Aktualizacja lokalizacji */
+      a9gCommunication("AT+LOCATION=2",1000);
+      /* Sprawdzenie czy zwrócono lokalizację */
+      if(a9gAnswer.indexOf(",") >= 0 && a9gAnswer.indexOf("GPS NOT FIX")==-1)
+      {
+        /* Aktualizacja daty i czasu ostatniej lokalizacji */
+        lastLocationTime=dateTime;
+        /* Przygotowanie i zapis lokalizacji do pamięci */
+        separator=a9gAnswer.indexOf(","); //ustawienie zmiennej separującej współrzędne geograficzne
+        lastLocation=(a9gAnswer.substring(separator-9,separator))+", "+(a9gAnswer.substring(separator+1,separator+10));
+        if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation, lastLocationTime))
         {
-            lastLocationTime=dateTime;  //czas ostatniej lokalizacji
-            separator=a9gAnswer.indexOf(","); //ustawienie zmiennej separującej współrzędne geograficzne
-            lastLocation=(a9gAnswer.substring(separator-9,separator))+", "+(a9gAnswer.substring(separator+1,separator+10)); //separacja współrzędnych geograficznych i zapis do zmiennej
-            if(!saveConfiguration(SPIFFS, nrTel, writeAPIKey, channelID, lastLocation, lastLocationTime)) //zapis współrzędnych geograficznych do pamięci urządzenia
-            {
-                #if DEBUG
-                  Serial.println("Przy zapisywaniu wystapil blad, urzadzenie zostanie zrestartowane");
-                #endif
-                pinMode(INTERNAL_LED, OUTPUT);
-                digitalWrite(INTERNAL_LED, HIGH);
-            }
             #if DEBUG
-                Serial.println(lastLocation);
+              Serial.println("Przy zapisywaniu wystapil blad, urzadzenie zostanie zrestartowane");
             #endif
-            /* Komenda do przesyłu MQTT */
-            command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\""+ ","+
-            "\"field1=" + (a9gAnswer.substring(separator-9,separator)) +
-             "&field2=" + (a9gAnswer.substring(separator+1,separator+10)) + 
-             "&field3=" + dateTime + "&status=MQTTPUBLISH" + "\""+",0,0,0";
-            a9gCommunication(command,5000); //Wysłanie pakietu MQTT
-
-            if( a9gAnswer.indexOf("OK") >= 0 )  //Jeżeli wysłano poprawnie
-            {
-                #if DEBUG
-                  Serial.println("MQTT sent");
-                  Serial.println("240 sekund oczekiwania na komunikacje");
-                #endif
-                a9gCommunication("",240000);  //4minuty oczekiwania na SMS
-            }
-            else  //Jeżeli wystąpił błąd
-            {
-                #if DEBUG
-                  Serial.println("MQTT not sent");
-                #endif
-                config=1; //tryb konfiguracji
-                A9GMQTTCONNECT(); //ponowne połączenie do serwera MQTT
-                a9gCommunication(command,5000); //próba ponownego wysłania pakietu MQTT
-            }
+            pinMode(INTERNAL_LED, OUTPUT);
+            digitalWrite(INTERNAL_LED, HIGH);
         }
         #if DEBUG
-        Serial.println("60 sekund oczekiwania na komunikacje");
+            Serial.println(lastLocation);
         #endif
+        /* Przygotowanie komendy do przesyłu danych MQTT */
+        command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\""+ ","+
+        "\"field1=" + (a9gAnswer.substring(separator-9,separator)) +
+          "&field2=" + (a9gAnswer.substring(separator+1,separator+10)) + 
+          "&field3=" + dateTime +
+          "&field4=" + batteryLevel +
+          "&status=MQTTPUBLISH" + "\""+",0,0,0";
+        /* Wysłanie pakietu MQTT */
+        a9gCommunication(command,5000);
+
+        /* Sprawdzenie poprawności wysłania pakietu MQTT */
+        if( a9gAnswer.indexOf("OK") >= 0 )
+        {
+          /* Jeżeli pakiet wysłano poprawnie */
+            #if DEBUG
+              Serial.println("MQTT sent");
+              Serial.println("240 sekund oczekiwania na komunikacje");
+            #endif
+            //a9gCommunication("",executedTaskTimePeriod);  //4minuty oczekiwania na SMS
+        }
+        else
+        {
+          /* Jeżeli wystąpił błąd przy wysyłaniu pakietu */
+          #if DEBUG
+            Serial.println("MQTT not sent");
+          #endif
+          /* Rekonfiguracja modułu GSM i połączenia z serwerem MQTT */
+          config=1;
+          A9GMQTTCONNECT();
+          /* Ponowna próba wysłania pakietu MQTT z danymi */
+          a9gCommunication(command,5000);
+        }
+      }
+      else
+      {
+        /* Wysłanie pakietu MQTT z aktualnym stanem baterii */
         command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\",\"field4=" + batteryLevel + "&status=MQTTPUBLISH\""+",0,0,0";
         a9gCommunication(command,5000); //Wysłanie pakietu MQTT
-        a9gCommunication("",60000); //Minuta oczekiwania na SMS
-        #if DEBUG
+      }
+
+      #if DEBUG
+        Serial.println("60 sekund oczekiwania na komunikacje");
+      #endif
+      a9gCommunication("",executeTaskTimePeriod); //Minuta oczekiwania na SMS
+      
+      #if DEBUG
         Serial.println("Koniec zadania");
-        #endif
+      #endif
     }
 }
 void A9Gmodule::setup()
 {
-    pinMode(A9G_PON, OUTPUT);//LOW LEVEL ACTIVE
-    pinMode(A9G_POFF, OUTPUT);//HIGH LEVEL ACTIVE
-    pinMode(A9G_LOWP, OUTPUT);//LOW LEVEL ACTIVE
+  /* Ustawienie pinów sterujących modułu GPRS/GSM */
+  pinMode(A9G_PON, OUTPUT);//LOW LEVEL ACTIVE
+  pinMode(A9G_POFF, OUTPUT);//HIGH LEVEL ACTIVE
+  pinMode(A9G_LOWP, OUTPUT);//LOW LEVEL ACTIVE
 
-    //Ustawienie pinów sterujących modułu GPRS/GSM
-    digitalWrite(A9G_PON, HIGH);
-    digitalWrite(A9G_POFF, LOW);
-    digitalWrite(A9G_LOWP, HIGH);
+  
+  digitalWrite(A9G_PON, HIGH);
+  digitalWrite(A9G_POFF, LOW);
+  digitalWrite(A9G_LOWP, HIGH);
 
+  #if DEBUG
+    Serial.println("After 2s A9G will POWER ON.");
+  #endif
+
+  /* 2 sekundowe opóźnienie */
+  delay(2000);  
+  /* Sprawdzenie poprawności uruchomienia modułu GSM/GPS */
+  if(A9GPOWERON()==1)
+  {
     #if DEBUG
-      Serial.println("After 2s A9G will POWER ON.");
+      Serial.println("A9G POWER ON.");
     #endif
-    delay(2000);  //2 sekundowe opóźnienie
-    if(A9GPOWERON()==1)
-    {
-      #if DEBUG
-        Serial.println("A9G POWER ON.");
-      #endif
-    }
+  }
 
-    /* SMS prep */
-    a9gCommunication("AT+CSCS=\"GSM\"",1000); //ustawienie kodowania
-    a9gCommunication("AT+CMGF=1",1000); //ustawienie trybu tekstowego
-
-    A9GMQTTCONNECT(); //połaczenie do serwera MQTT
-    clearSms(); //wyczyszczenie SMSów
-    a9gCommunication("AT+GPS=1",1000);
+  /* Przygotowanie modułu do odbioru i wysyłania wiadmości tekstowych */
+  a9gCommunication("AT+CSCS=\"GSM\"",1000); //ustawienie kodowania
+  a9gCommunication("AT+CMGF=1",1000); //ustawienie trybu tekstowego
+  
+  /* Połączenie do serwera MQTT */
+  A9GMQTTCONNECT();
+  /* Czyszczenie pamięci wiadomości tekstowych modułu */
+  clearSms();
+  /* Włączenie modułu GPS */
+  a9gCommunication("AT+GPS=1",1000);
 }
 void A9Gmodule::loadData()
 {
@@ -248,10 +337,11 @@ void A9Gmodule::loadData()
         Serial.println("Something went wrong loading config file. Erasing config file");
         delay(500);
       #endif  
-      //Zabezpieczenie
+      /* Zabezpieczenie */
       deleteFile(SPIFFS, CONFIG_PATH);  //usunięcie konfiguracji
       ESP.restart();  //restart urządzenia
     }
+    /* Rozpoczęcie komunikacji między modułem GSM/GPS a ESP8266 */
     serial->begin(A9_BAUD_RATE, SWSERIAL_8N1, 14, 12, false, 128);
 }
 
