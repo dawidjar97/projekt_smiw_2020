@@ -4,13 +4,14 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="static/styles.css">
-        <title>Konfiguracja</title>
+        <link rel="icon" type="image/png" href="static/car.ico">
+        <title>Lokalizator GPS</title>
     </head>
     <body>
         <div class="main-box">
             <h1>Konfiguracja</h1>
-            <p>Potrzebujemy kilku informacji wymaganych do konfiguracji Lokalizatora GPS</p>
-            <form id="form" action="initial_config_ready.html" method="post">
+            <p>Potrzebujemy kilku danych wymaganych do konfiguracji Lokalizatora GPS</p>
+            <form id="form" action="config_end.html" method="post">
                 <div class="form-row">
                     <div class="form-element">
                         <label for="nr-tel">Numer telefonu</label>
@@ -31,8 +32,8 @@
                 </div>
             </form>
             <div class="btn">
-                <a href="#" onclick="trySubmit();"><img src="static/next.svg"></a>
-                <p id="message">Zapisz</p>
+                <a href="#" onclick="trySubmit();"><img src="static/next.png"></a>
+                <p id="message"> </p>
             </div>
         </div>
     </body>

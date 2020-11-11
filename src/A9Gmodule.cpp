@@ -4,6 +4,7 @@
 void A9Gmodule::sendSms(String msg)  //funkcja do wysyłania wiadomości SMS
 {
   serial->flush();
+  serial->print("WAKE UP\r");
   serial->print("AT+CMGS=\""+ nrTel + "\"\r");
   serial->println(msg);
   serial->write(26); //znak końca wiadomości SMS
@@ -180,6 +181,7 @@ int A9Gmodule::A9GPOWERON()
 
 void A9Gmodule::A9GMQTTCONNECT()
 {
+  a9gCommunication("WAKE UP",0);
   /* GPRS */
   a9gCommunication("AT+CGATT=1",1000); //Attach GPRS
   a9gCommunication("AT+CIPMUX=0",1000); //enable single IP connection
@@ -218,10 +220,13 @@ void A9Gmodule::executeTask()
     if(!config)
     {
       /* Aktualizacja stanu baterii */
+      a9gCommunication("WAKE UP",0);
       a9gCommunication("AT+CBC?",1000);
       /* Aktualizacja daty i godziny */
+      a9gCommunication("WAKE UP",0);
       a9gCommunication("AT+CCLK?",1000);
       /* Aktualizacja lokalizacji */
+      a9gCommunication("WAKE UP",0);
       a9gCommunication("AT+LOCATION=2",1000);
       /* Sprawdzenie czy zwrócono lokalizację */
       if(a9gAnswer.indexOf(",") >= 0 && a9gAnswer.indexOf("GPS NOT FIX")==-1)
@@ -250,6 +255,7 @@ void A9Gmodule::executeTask()
           "&field4=" + batteryLevel +
           "&status=MQTTPUBLISH" + "\""+",0,0,0";
         /* Wysłanie pakietu MQTT */
+        a9gCommunication("WAKE UP",0);
         a9gCommunication(command,5000);
 
         /* Sprawdzenie poprawności wysłania pakietu MQTT */
@@ -258,7 +264,7 @@ void A9Gmodule::executeTask()
           /* Jeżeli pakiet wysłano poprawnie */
             #if DEBUG
               Serial.println("MQTT sent");
-              Serial.println("240 sekund oczekiwania na komunikacje");
+              //Serial.println("240 sekund oczekiwania na komunikacje");
             #endif
             //a9gCommunication("",executedTaskTimePeriod);  //4minuty oczekiwania na SMS
         }
@@ -272,6 +278,7 @@ void A9Gmodule::executeTask()
           config=1;
           A9GMQTTCONNECT();
           /* Ponowna próba wysłania pakietu MQTT z danymi */
+          a9gCommunication("WAKE UP",0);
           a9gCommunication(command,5000);
         }
       }
@@ -279,9 +286,9 @@ void A9Gmodule::executeTask()
       {
         /* Wysłanie pakietu MQTT z aktualnym stanem baterii */
         command="AT+MQTTPUB=\"channels/" + channelID + "/publish/"+ writeAPIKey + "\",\"field4=" + batteryLevel + "&status=MQTTPUBLISH\""+",0,0,0";
+        a9gCommunication("AT+CBC?",0);
         a9gCommunication(command,5000); //Wysłanie pakietu MQTT
       }
-
       #if DEBUG
         Serial.println("60 sekund oczekiwania na komunikacje");
       #endif
@@ -290,6 +297,8 @@ void A9Gmodule::executeTask()
       #if DEBUG
         Serial.println("Koniec zadania");
       #endif
+        /*a9gCommunication("AT+SLEEP=0",0); //SLEEP MODE?
+        a9gCommunication("AT+SLEEP=0",500);*/
     }
 }
 void A9Gmodule::setup()
@@ -317,9 +326,11 @@ void A9Gmodule::setup()
       Serial.println("A9G POWER ON.");
     #endif
   }
-
+  delay(1000);
   /* Przygotowanie modułu do odbioru i wysyłania wiadmości tekstowych */
   a9gCommunication("AT+CSCS=\"GSM\"",1000); //ustawienie kodowania
+  a9gCommunication("WAKE UP",0);
+  a9gCommunication("AT+SLEEP=0",1000);
   a9gCommunication("AT+CMGF=1",1000); //ustawienie trybu tekstowego
   
   /* Połączenie do serwera MQTT */
@@ -328,6 +339,7 @@ void A9Gmodule::setup()
   clearSms();
   /* Włączenie modułu GPS */
   a9gCommunication("AT+GPS=1",1000);
+  a9gCommunication("AT+SLEEP=2",1000);
 }
 void A9Gmodule::loadData()
 {

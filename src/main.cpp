@@ -57,15 +57,15 @@ void setup()
     /* Zdarzenia serwera */
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) 
     {
-      request->send(SPIFFS, "/initial_config_hello.html");
+      request->send(SPIFFS, "/config_start.html");
     });
 
-    server.on("/initial_config.html", HTTP_GET, [](AsyncWebServerRequest *request) 
+    server.on("/config.html", HTTP_GET, [](AsyncWebServerRequest *request) 
     {
-      request->send(SPIFFS, "/initial_config.html");
+      request->send(SPIFFS, "/config.html");
     });
 
-    server.on("/initial_config_ready.html", HTTP_POST, [](AsyncWebServerRequest *request) 
+    server.on("/config_end.html", HTTP_POST, [](AsyncWebServerRequest *request) 
     {
       if(request->hasParam("nr-tel", true) && request->hasParam("write-API-Key", true) && request->hasParam("channel-ID", true)) 
       {
@@ -79,7 +79,7 @@ void setup()
           Serial.print("channel-ID: "); Serial.println(chID->value().c_str());
         #endif
 
-        request->send(SPIFFS, "/initial_config_ready.html");
+        request->send(SPIFFS, "/config_end.html");
 
         if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), "null", "null"))//Zapis konfiguracji do pamięci
         {
