@@ -1,8 +1,10 @@
+#pragma once
+
 #include <Arduino.h>
-#include "FS.h"
 #include <FS.h>
 #include <stdio.h>
 #define DEBUG 1 //flaga debugowania
+#define INTERNAL_LED 2
 #define CONFIG_PATH "/cfg.file"
 
 void deleteFile(fs::FS &fs, const char *path);  //funkcja do usuwania plików

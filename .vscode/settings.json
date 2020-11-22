@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "functional": "cpp",
-        "bitset": "cpp"
+        "bitset": "cpp",
+        "random": "cpp"
     }
 }

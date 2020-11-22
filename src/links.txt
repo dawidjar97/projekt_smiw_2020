@@ -1,0 +1,4 @@
+https://github.com/IOT-MCU/ESP-12S-A9-A9G-GPRS-Node-v1.0
+
+https://wiki.dfrobot.com/A9G_Module_SKU_TEL0134
+
