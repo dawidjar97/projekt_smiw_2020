@@ -2,6 +2,7 @@
     "files.associations": {
         "functional": "cpp",
         "bitset": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "limits": "cpp"
     }
 }

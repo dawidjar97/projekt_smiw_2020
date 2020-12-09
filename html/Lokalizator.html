@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="utf-8" />
+        <!-- Kodowanie -->
+        <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Zewnętrzny css -->
         <link rel="stylesheet" href="style.css">
+        <!-- Leaflet css -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
         integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
         crossorigin=""/>
+        <!-- Ikona strony -->
         <link rel="icon" type="image/png" href="car.ico">
+        <!-- jQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <!-- Leaflet -->
         <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""></script>
@@ -16,19 +23,26 @@
     <body>
         <div class="main-box">
             <h1>Lokalizator</h1>
+            <!-- Mapa -->
             <div id="mapid"></div>
+            <!-- Paragrafy dla danych -->
             <p id="info"></p>
             <p id="battery"></p>
         </div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDAkvGTo2SsygzzbWq3UmXlO4eQkKx2X2I&"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    
+    
     <script>
-    var map;
-    var marker;
-    var circle;
+   
+    /* Zmienne do obsługi mapy */
+    var map;    //Obiekt mapy
+    var marker; //Marker z dokładną lokalizacją
+    var circle; //Przybliżona dokładność
+
+     /* Zmienne do wczytywania danych z API */
     var x=0,y=0;
     var locDate="data",battery=0;
     
+     /* Pobieranie danych z API */
     function loadData()
     {
         $.getJSON("https://api.thingspeak.com/channels/1048994/fields/1/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;x=Number(m.field1);});
@@ -36,6 +50,7 @@
         $.getJSON("https://api.thingspeak.com/channels/1048994/fields/4/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;battery=Number(m.field4);});
         $.getJSON("https://api.thingspeak.com/channels/1048994/fields/2/last.json?api_key=SDR5WFADHLBQDRVD", function(result){var m = result;y=Number(m.field2); });
     }
+     /* Tworzenie mapy */
     function initialize() 
     {
 
@@ -56,10 +71,11 @@
             radius: 50
         }).addTo(map);
 
-
+         /* Wypełnienie paragrafów odpowiednimi danymi */
         document.getElementById("info").innerHTML="Data ostatniej lokalizacji: "+locDate+"<br>";
         document.getElementById("battery").innerHTML="Stan baterii: " + battery + "%";
     }
+     /* Aktualizacja danych */
     function update()
     {
         loadData();
@@ -70,10 +86,12 @@
         document.getElementById("info").innerHTML="Data ostatniej lokalizacji: "+locDate+"<br>";
         document.getElementById("battery").innerHTML="Stan baterii: " + battery + "%";
     }
+     /* Zmienne do wczytywania danych z API */
     loadData();
-    window.setTimeout(initialize, 300);
-    window.setInterval(update, 3000);
-    
+     /* Wywołanie funkcji tworzącej mapę */
+    window.setTimeout(initialize, 200);
+     /* Cykliczne odświeżanie danych */
+    window.setInterval(update, 15000);
     
     </script>
     </body>

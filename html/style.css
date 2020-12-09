@@ -8,7 +8,7 @@ html, body
 
 body 
 {
-    background: linear-gradient(70deg, rgb(189, 211, 67), rgb(86, 192, 134));
+    background: linear-gradient(70deg, rgb(189, 211, 67), rgb(86, 192, 134)) fixed;
     display: flex;
     background-size: cover;
 }

@@ -10,4 +10,4 @@ test AT+GPSLP=1 + sleep mode na uart start: 16:26   16:27 75%   9:52 6% 10:28 um
 
 test AT+GPSLP=1 + sleep mode na uart start: 23:16 23:17 96% 17:38 14% 20:18 umar 21h    16:23 powiadomienie lowBat 4h przed :)
 
-12:24 start 98% 12:47 77%   8:43 umar ponad 20h  04:25 powiadomienie lowBat 4h przed :)
+12:24 start 98% 12:47 77%   8:43 umar ponad 20h  04:25 powiadomienie lowBat 4h przed :)2n p
