@@ -1,5 +1,4 @@
 /* Podstawowe biblioteki */
-#include <Arduino.h>
 #include <SoftwareSerial.h>
 /* Menedżer obsługi pliku konfiguracji */
 #include "configurator.h"
@@ -38,7 +37,7 @@ private:
     String lastLocation;
     String lastLocationTime;
 
-    /* Hardware */
+    /* Komunikacja */
     SoftwareSerial *serial;
 
     /* Główne dane */

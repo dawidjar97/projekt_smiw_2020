@@ -6,7 +6,7 @@
 /* WiFi and server defines */
 #define HTTP_SERVER_PORT 80
 #define DEFAULT_SSID "Lokalizator ESP12S"
-#define DEFAULT_PASSWORD "12345678"
+#define DEFAULT_PASSWORD "L0k4liz@t0r#01"
 
 AsyncWebServer server(HTTP_SERVER_PORT);  //Serwer do obsługi konfiguracji
 bool espReboot=0;

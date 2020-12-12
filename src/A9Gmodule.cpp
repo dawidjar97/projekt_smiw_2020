@@ -147,6 +147,9 @@ void A9Gmodule::reset()
 
 void A9Gmodule::restart()
 {
+  #if DEBUG
+    Serial.println("Restart urzadzenia");
+  #endif
   /* Wyłączenie modułu GSM/GPS */
         digitalWrite(A9G_POFF, HIGH);
         delay(3000);
@@ -283,7 +286,7 @@ void A9Gmodule::executeTask()
     }
     #if DEBUG
       Serial.print(executeTaskTimePeriod/1000);
-      Serial.println(" oczekiwania na komunikacje");
+      Serial.println("s oczekiwania na komunikacje");
     #endif
     a9gCommunication("", executeTaskTimePeriod); //Czas oczekiwania na SMS
     

@@ -4,8 +4,8 @@
 #include <FS.h>
 #include <stdio.h>
 #define DEBUG 1 //flaga debugowania
-#define INTERNAL_LED 2
-#define CONFIG_PATH "/cfg.file"
+#define INTERNAL_LED 2  //wyprowadzenia do zintegrowanej diody LED
+#define CONFIG_PATH "/cfg.file" //Plik do przechowywania konfiguracji
 
 void deleteFile(fs::FS &fs, const char *path);  //funkcja do usuwania plików
 bool isConfigurationCompleted(fs::FS &fs);  //funkcja do sprawdzania czy plik istnieje
