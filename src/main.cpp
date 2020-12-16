@@ -1,16 +1,15 @@
 
-/* A9G GSM/GPRS module library */
+/* Biblioteki i klasy */
 #include "A9Gmodule.h"
 #include "configurationServer.h"
 
 /* Hardware Serial baud speed rate */
 #define SERIAL_BAUD 115200
 
-/* Global Variables */
+/* Zmienne globalne */
 A9Gmodule locator;
 
-/* Local Functions */
-
+/* Funkcje lokalne */
 void setup()
 {
   /* Inicjalizacja obsługi pamięci */

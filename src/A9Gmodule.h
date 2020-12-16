@@ -7,7 +7,7 @@
 #define A9G_PON     16  //ESP12 GPIO16 A9/A9G POWON
 #define A9G_POFF    15  //ESP12 GPIO15 A9/A9G POWOFF
 #define A9G_WAKE    13  //ESP12 GPIO13 A9/A9G WAKE
-#define A9G_LOWP    2  //ESP12 GPIO2 A9/A9G ENTER LOW POWER MODULE
+#define A9G_LOWP    2   //ESP12 GPIO2 A9/A9G ENTER LOW POWER MODULE
 #define A9G_RX      14  //A9G GPS/GPRS UART RX PIN
 #define A9G_TX      12  //A9G GPS/GPRS UART TX PIN
 
@@ -28,17 +28,17 @@ class A9Gmodule
 private:
 
     /* Konfiguracja użytkownika */
-    String writeAPIKey;
-    String channelID;
-    String nrTel;
+    String writeAPIKey; //kod API zapisu MQTT
+    String channelID;   //numer kanału MQTT
+    String nrTel;       //numer telefonu
 
     
     /* Przechowywane dane */
-    String lastLocation;
-    String lastLocationTime;
+    String lastLocation;    //ostatnia lokalizacja
+    String lastLocationTime;    //czas ostatniej lokalizacji
 
     /* Komunikacja */
-    SoftwareSerial *serial;
+    SoftwareSerial *serial; //wskaźnik na obiekt programowego Seriala
 
     /* Główne dane */
     bool configFlag = 1;  //flaga konfiguracji urządzenia
@@ -50,8 +50,8 @@ private:
     String dateTime = "";
     String a9gAnswer = "";
     String command = "";
-    uint8_t separator=33; //zmienna używana do separacji współrzędnych GPS
-    uint32_t executeTaskTimePeriod = 60000; //1minute
+    uint8_t separator = 33; //zmienna używana do separacji współrzędnych GPS
+    uint32_t executeTaskTimePeriod = 60000; //1 minuta
 
     int A9GPOWERON(); //Metoda włączająca moduł GPRS/GPS
     void A9GMQTTCONNECT();  //Metoda inicjująca połączenie do serwera MQTT
@@ -67,7 +67,7 @@ private:
 
 public:
     A9Gmodule(); //Kontruktor
-    ~A9Gmodule();
+    ~A9Gmodule(); //Destruktor
     
     void setup();   //Metoda do ustawienia modułu w tryb pracy
     void loadData();    //Metoda do wczytywania wartości z pamięci urządzenia

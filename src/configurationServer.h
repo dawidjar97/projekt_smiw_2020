@@ -46,7 +46,7 @@ void startServerConfiguration()
         if(!saveConfiguration(SPIFFS, tel->value(), apiKey->value(), chID->value(), "null", "null"))//Zapis konfiguracji do pamięci
         {
           #if DEBUG
-            Serial.println("Something went wrong.");
+            Serial.println("Something wrong during save.");
             pinMode(INTERNAL_LED, OUTPUT);
             digitalWrite(INTERNAL_LED, HIGH);
           #endif

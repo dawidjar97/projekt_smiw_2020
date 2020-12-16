@@ -1,13 +1,13 @@
-test AT+GPSLP=1 + sleep mode na uart start: 18:32   8:44 27%    11:15 16% 12:23 12% 12:45 10% 14:03 4% 14:20 umar   20h
+test AT+GPSLP=1 + sleep mode na uart start: 18:32   8:44 27%    11:15 16% 12:23 12% 12:45 10% 14:03 4% 14:20 dead   20h
 
-test AT+GPSLP=2 + sleep mode na uart start: 19:02   19:04 63%   23:19 41%   00:58 35% 02:05 31% 8:13 umar   13h
+test AT+GPSLP=2 + sleep mode na uart start: 19:02   19:04 63%   23:19 41%   00:58 35% 02:05 31% 8:13 dead   13h
 
-test AT+GPSLP=2 + sleep mode na uart start: 19:15  19:24 72% NL 20:04 67%   09:50 5% 11:02 umar     16h
+test AT+GPSLP=2 + sleep mode na uart start: 19:15  19:24 72% NL 20:04 67%   09:50 5% 11:02 dead     16h
 
-test AT+GPSLP=1 + sleep mode na uart start: 20:02   20:04 79%   15:24 umar 19:24h
+test AT+GPSLP=1 + sleep mode na uart start: 20:02   20:04 79%   15:24 dead 19:24h
 
-test AT+GPSLP=1 + sleep mode na uart start: 16:26   16:27 75%   9:52 6% 10:28 umar  18h
+test AT+GPSLP=1 + sleep mode na uart start: 16:26   16:27 75%   9:52 6% 10:28 dead  18h
 
-test AT+GPSLP=1 + sleep mode na uart start: 23:16 23:17 96% 17:38 14% 20:18 umar 21h    16:23 powiadomienie lowBat 4h przed :)
+test AT+GPSLP=1 + sleep mode na uart start: 23:16 23:17 96% 17:38 14% 20:18 dead 21h    16:23 powiadomienie lowBat 4h przed :)
 
-12:24 start 98% 12:47 77%   8:43 umar ponad 20h  04:25 powiadomienie lowBat 4h przed :)2n p
+12:24 start 98% 12:47 77%   8:43 dead ponad 20h  04:25 powiadomienie lowBat 4h przed :)

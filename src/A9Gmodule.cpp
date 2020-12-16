@@ -397,7 +397,8 @@ void A9Gmodule::prepareAndSaveLocation()
 
 A9Gmodule::A9Gmodule()
 {
-    serial = new SoftwareSerial(A9G_RX, A9G_TX, false);
+  /* Obiekt programowego Seriala */
+  serial = new SoftwareSerial(A9G_RX, A9G_TX, false);
 }
 
 A9Gmodule::~A9Gmodule(){}
